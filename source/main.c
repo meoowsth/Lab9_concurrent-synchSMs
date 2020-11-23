@@ -1,7 +1,7 @@
 /*	Author: lab
  *  Partner(s) Name: Tinghui Song
  *	Lab Section: 24
- *	Assignment: Lab #9  Exercise #3
+ *	Assignment: Lab #9  Exercise #4
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -19,6 +19,7 @@ unsigned char tempA;
 unsigned char temp_BL = 0x00;
 unsigned char temp_TL = 0x00;
 unsigned char temp_Speaker = 0x00;
+unsigned char freq = 2;
 
 enum ThreeLEDs_States{ TL_Start, TL_1, TL_2, TL_3} ThreeLEDs_State;
 
@@ -116,6 +117,50 @@ void Tick_Speaker(){
 	}
 }
 
+enum Frequency_States{ Frequency_Start, Frequency_Wait, Frequency_Inc, Frequencey_Dec}Frequency_State;
+
+void Tick_Frequency(){
+	switch(Frequency_State){ //transistions state
+		case Frequency_Start:
+			Frequency_State = Frequency_Wait;
+			break;
+		case Frequency_Wait:
+			if((tempA & 0x01) == 0x01){
+				Frequency_State = Frequency_Inc;
+			}else if((tempA & 0x02) == 0x02){
+				Frequency_State = Frequencey_Dec;
+			}
+			break;
+		case Frequency_Inc:
+			Frequency_State = Frequency_Wait;
+			break;
+		case Frequencey_Dec:
+			Frequency_State = Frequency_Wait;
+			break;
+		default:
+			break;	
+	}
+
+	switch(Frequency_State){ //action states
+		case Frequency_Start:
+			break;
+
+		case Frequency_Wait:
+			break;
+
+		case Frequency_Inc:
+			freq++;
+			break;
+		case Frequencey_Dec:
+			if(freq >= 1){
+				freq--;
+			}
+			break;
+		default:
+			break;	
+	}
+}
+
 enum Output_States{Output_Start, Output_Run} Output_State;
 
 void OutputLED(){
@@ -153,11 +198,14 @@ int main(void) {
 	Speaker_State = Speaker_Start;
 	Output_State = Output_Start;
 	Speaker_State = Speaker_Start;
+	Frequency_State = Frequency_Start;
 
 	unsigned long BL_elapsedTime = 0;
 	unsigned long TL_elapsedTime = 0;
 	unsigned long Speaker_elapsedTime = 0;
+	unsigned long Frequency_elapsedTime = 0;
 	const unsigned long timerPeriod = 1;
+
     while (1) {
 	tempA = ~PINA;
 	if (BL_elapsedTime >= 1000) {
@@ -168,9 +216,13 @@ int main(void) {
 		Tick_ThreeLEDs();
 		TL_elapsedTime = 0;
 	}
-	if (Speaker_elapsedTime >= 2){
+	if (Speaker_elapsedTime >= freq){
 		Tick_Speaker();
 		Speaker_elapsedTime = 0;
+	}
+	if (Frequency_elapsedTime >= 20 ){
+		Tick_Frequency();
+		Frequency_elapsedTime = 0;
 	}
 	OutputLED();
 	while (!TimerFlag) {}
@@ -178,6 +230,7 @@ int main(void) {
 	BL_elapsedTime += timerPeriod;
 	TL_elapsedTime += timerPeriod;
 	Speaker_elapsedTime += timerPeriod;
+	Frequency_elapsedTime += timerPeriod;
     }
     return 1;
 }
