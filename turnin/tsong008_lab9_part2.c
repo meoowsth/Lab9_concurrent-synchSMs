@@ -1,7 +1,7 @@
 /*	Author: lab
  *  Partner(s) Name: Tinghui Song
  *	Lab Section: 24
- *	Assignment: Lab #9  Exercise #3
+ *	Assignment: Lab #9  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -15,10 +15,8 @@
 #endif
 #include "Timer.h"
 
-unsigned char tempA;
 unsigned char temp_BL = 0x00;
 unsigned char temp_TL = 0x00;
-unsigned char temp_Speaker = 0x00;
 
 enum ThreeLEDs_States{ TL_Start, TL_1, TL_2, TL_3} ThreeLEDs_State;
 
@@ -86,35 +84,6 @@ void Tick_BlinkingLED(){
 		 
 }
 
-enum Speaker_States{ Speaker_Start, Speaker_Wait, Speaker_On, Speaker_Off} Speaker_State;
-
-void Tick_Speaker(){
-	switch(Speaker_State){//Transitions
-		case Speaker_Start:
-			Speaker_State = Speaker_Wait;
-			break; 
-		case Speaker_Wait:
-			Speaker_State = (tempA == 0x04)? Speaker_On:Speaker_Wait;
-			break; 
-		case Speaker_On:
-			Speaker_State = Speaker_Wait;
-			break; 
-		default:
-			break; 
-	}
-	switch(Speaker_State){ //Actions
-		case Speaker_Start:
-			break; 
-		case Speaker_Wait:
-			break; 
-		case Speaker_On:
-			temp_Speaker = 0x20;
-			break; 
-		default:
-			break; 
-	}
-}
-
 enum Output_States{Output_Start, Output_Run} Output_State;
 
 void OutputLED(){
@@ -131,7 +100,7 @@ void OutputLED(){
 		case Output_Start:
 			break;
 		case Output_Run:
-			tempB = temp_BL | temp_TL | temp_Speaker;
+			tempB = temp_BL | temp_TL;
 			break;
 	}
 	PORTB = tempB;
@@ -140,8 +109,7 @@ void OutputLED(){
 
 int main(void) {
     /* Insert DDR and PORT initializations */
-	DDRA = 0x00; PORTA = 0xFF;
-	DDRB = 0xFF; PORTB = 0x00;
+	DDRB = 0xFF;	PORTB = 0x00;
 
     /* Insert your solution below */
 	TimerSet(1);
@@ -149,16 +117,12 @@ int main(void) {
 
 	ThreeLEDs_State = TL_Start;
 	BlinkingLED_State = BL_Start;
-	Speaker_State = Speaker_Start;
 	Output_State = Output_Start;
-	Speaker_State = Speaker_Start;
 
 	unsigned long BL_elapsedTime = 0;
 	unsigned long TL_elapsedTime = 0;
-	unsigned long Speaker_elapsedTime = 0;
 	const unsigned long timerPeriod = 1;
     while (1) {
-	tempA = ~PINA;
 	if (BL_elapsedTime >= 1000) {
 		Tick_BlinkingLED();
 		BL_elapsedTime = 0;
@@ -167,16 +131,11 @@ int main(void) {
 		Tick_ThreeLEDs();
 		TL_elapsedTime = 0;
 	}
-	if (Speaker_elapsedTime >= 2){
-		Tick_Speaker();
-		Speaker_elapsedTime = 0;
-	}
 	OutputLED();
 	while (!TimerFlag) {}
 	TimerFlag = 0;
 	BL_elapsedTime += timerPeriod;
 	TL_elapsedTime += timerPeriod;
-	Speaker_elapsedTime += timerPeriod;
     }
     return 1;
 }
